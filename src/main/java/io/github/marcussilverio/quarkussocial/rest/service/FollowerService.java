@@ -1,4 +1,4 @@
-package io.github.marcussilverio.quarkussocial.rest;
+package io.github.marcussilverio.quarkussocial.rest.service;
 
 import io.github.marcussilverio.quarkussocial.domain.model.Follower;
 import io.github.marcussilverio.quarkussocial.domain.model.User;
@@ -8,45 +8,41 @@ import io.github.marcussilverio.quarkussocial.rest.dto.FollowRequest;
 import io.github.marcussilverio.quarkussocial.rest.dto.FollowerResponse;
 import io.github.marcussilverio.quarkussocial.rest.dto.FollowersPerUserResponse;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Path("/users/{user_id}/followers")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
-public class FollowerResource {
+@ApplicationScoped
+public class FollowerService {
   @Inject
   UserRepository userRepository;
   @Inject
   FollowerRepository followerRepository;
-
-  @PUT
   @Transactional
-  public Response followUser(@PathParam("user_id") Long id,  FollowRequest request){
-    if(id.equals(request.getFollowerId())){
+  public Response followUser (Long id, FollowRequest request) {
+    if (id.equals(request.getFollowerId())) {
       return Response.status(Response.Status.CONFLICT).entity("You can't follow yourself").build();
     }
     User user = userRepository.findById(id);
     User follower = userRepository.findById(request.getFollowerId());
-    if(user == null || follower == null){
+    if (user == null || follower == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-      Follower entity = new Follower();
-    if (!followerRepository.follows(user,follower)) {
+    Follower entity = new Follower();
+    if (!followerRepository.follows(user, follower)) {
       entity.setUser(user);
       entity.setFollower(follower);
       followerRepository.persist(entity);
     }
-
     return Response.status(Response.Status.CREATED).entity(entity).build();
   }
-  @GET
-  public Response listFollowers (@PathParam("user_id") Long id){
+  public Response listFollowers (Long id){
     User user = userRepository.findById(id);
     if(user == null){
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -62,8 +58,7 @@ public class FollowerResource {
     return Response.ok(responseObject).build();
   }
   @Transactional
-  @DELETE
-  public Response unfollow(@PathParam("user_id") Long id, @QueryParam("followerId") Long followerId){
+  public Response unfollow(Long id,Long followerId){
     User user = userRepository.findById(id);
     if(user == null){
       return Response.status(Response.Status.NOT_FOUND).build();
